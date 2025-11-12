@@ -17,14 +17,14 @@ logging.basicConfig(
 )
 
 
-def get_edge_weight(weighted_graph: ProblemInstance, u: str, v: str) -> int:
-    """Retrieve the weight of the edge between two nodes."""
+"""def get_edge_weight(weighted_graph: ProblemInstance, u: str, v: str) -> int:
+    #Retrieve the weight of the edge between two nodes.
     for edge in weighted_graph.connections:
         if (edge.endpoint_a == u and edge.endpoint_b == v) or (
             edge.endpoint_a == v and edge.endpoint_b == u
         ):
             return edge.distance
-    raise KeyError(f"Edge {u} - {v} not found in the graph")
+    raise KeyError(f"Edge {u} - {v} not found in the graph")"""
 
 
 def build_weighted_graph(instance: ProblemInstance) -> nx.Graph:
@@ -39,9 +39,8 @@ def build_weighted_graph(instance: ProblemInstance) -> nx.Graph:
     # Add all endpoints as nodes in the graph
     for vertex in instance.endpoints:
         G.add_node(vertex)
-
     # Add edges with weights to the graph
-    for v in instance.endpoints:
+    """for v in instance.endpoints:                                    
         for w in instance.endpoints:
             if v != w:  # Ensure not to check the same node
                 # Check if there is an edge between v and w
@@ -51,18 +50,19 @@ def build_weighted_graph(instance: ProblemInstance) -> nx.Graph:
                 ) or any(
                     edge.endpoint_a == w and edge.endpoint_b == v
                     for edge in instance.connections
-                ):
-                    # Get the weight of the edge and add it to the graph
-                    weight = get_edge_weight(instance, v, w)
-                    G.add_edge(v, w, weight=weight)
+                ):"""
+    for edge in instance.connections: #only go through the edges not every single node
+        # Get the weight of the edge and add it to the graph
+        #weight = get_edge_weight(instance, edge.endpoint_a, edge.endpoint_b)
+        #G.add_edge(edge.endpoint_a, edge.endpoint_b, weight=weight)
+        G.add_edge(edge.endpoint_a, edge.endpoint_b, weight=edge.distance)
 
     return G
 
 
-def distance(instance: ProblemInstance, u: str, v: str) -> int:
-    """Calculate the shortest path distance between two endpoints in the network."""
-    graph = build_weighted_graph(instance)
-    return nx.shortest_path_length(graph, u, v, weight="weight")
+"""def distance(instance: ProblemInstance,graph, u: str, v: str) -> int:
+    Calculate the shortest path distance between two endpoints in the network.
+    return nx.dijkstra_path_length(graph, u, v, weight="weight") #better algorithm"""
 
 
 class MaxPlacementsSolver:
@@ -90,12 +90,15 @@ class MaxPlacementsSolver:
     def _add_distance_constraints(self):
         """Add constraints to ensure selected endpoints are not too close."""
         logging.info("Adding distance constraints")
+        graph = build_weighted_graph(self.instance) #create graph only once
+        distance = dict(nx.all_pairs_dijkstra_path_length(graph)) #compute all distances at once
         for endpoint1, endpoint2 in itertools.combinations(
             self.instance.approved_endpoints, 2
         ):
             if (
-                distance(self.instance, endpoint1, endpoint2)
-                < self.instance.min_distance_between_placements
+                distance[endpoint1][endpoint2] < self.instance.min_distance_between_placements
+                #distance(self.instance,graph, endpoint1, endpoint2)
+                #< self.instance.min_distance_between_placements"""
             ):
                 self.model.Add(self.vars[endpoint1] + self.vars[endpoint2] <= 1)
 

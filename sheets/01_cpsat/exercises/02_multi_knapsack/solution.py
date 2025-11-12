@@ -18,7 +18,7 @@ class MultiKnapsackSolver:
     - solver (CpSolver): a CpSolver object representing the constraint programming solver.
     """
 
-    def __init__(self, instance: Instance, activate_toxic: bool = False):
+    def __init__(self, instance: Instance, activate_toxic: bool = True):
         """
         Initialize the solver with the given Multi-Knapsack instance.
 
@@ -32,6 +32,36 @@ class MultiKnapsackSolver:
         self.solver = CpSolver()
         self.solver.parameters.log_search_progress = True
         # TODO: Implement me!
+        self.x = [
+            [self.model.new_bool_var(f"x[{i}_{j}]")
+            for j in range(len(self.capacities))]
+            for i in range(len(self.items))
+        ]
+
+        self.y = [self.model.new_bool_var(f"y[{j}]") for j in range(len(self.capacities))]
+
+        for j in range(len(self.capacities)):
+            self.model.add(sum(self.x[i][j] * self.items[i].weight for i in range(len(self.items))) <= self.capacities[j])
+
+        for i in range(len(self.items)):
+            self.model.add_at_most_one(self.x[i][j] for j in range(len(self.capacities)))
+
+        for i in range(len(self.items)):
+            for j in range(len(self.capacities)):
+                if self.items[i].toxic:
+                    self.model.add_implication(self.x[i][j], self.y[j])
+                else:
+                    self.model.add_implication(self.y[j], ~self.x[i][j])
+
+
+
+
+        accumulated_value = sum(self.x[i][j]  * self.items[i].value for i in range(len(self.items)) for j in range(len(self.capacities)))
+
+        self.model.maximize(accumulated_value)
+
+
+
 
 
 
@@ -51,4 +81,14 @@ class MultiKnapsackSolver:
         if timelimit < math.inf:
             self.solver.parameters.max_time_in_seconds = timelimit
         # TODO: Implement me!
-        return Solution(trucks=[])  # empty solution
+        status = self.solver.solve(self.model)
+        assert status == OPTIMAL or status == FEASIBLE
+
+
+        trucks = [[] for _ in range(len(self.capacities))]
+        for i in range(len(self.items)):
+            for j in range(len(self.capacities)):
+                if self.solver.boolean_value(self.x[i][j]):
+                    trucks[j].append(self.items[i])
+        return Solution(trucks=trucks)
+        #return Solution(trucks=[])  # empty solution

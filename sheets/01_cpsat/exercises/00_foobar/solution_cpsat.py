@@ -8,8 +8,19 @@ def solve(instance: Instance) -> Solution:
     """
     numbers = instance.numbers
     model = cp_model.CpModel()
+
+    x = max(numbers)
+    y = min(numbers)
+
+    model.add(x - y >= 0)
+    model.maximize(x - y)
+
+    solver = cp_model.CpSolver()
+    status = solver.Solve(model)
+
+
     return Solution(
-        number_a=numbers[0],
-        number_b=numbers[-1],
-        distance=abs(numbers[0] - numbers[-1]),
+        number_a = x,
+        number_b = y,
+        distance = abs(x - y),
     )
