@@ -55,7 +55,6 @@ class MultiKnapsackSolver:
 
 
 
-
         accumulated_value = sum(self.x[i][j]  * self.items[i].value for i in range(len(self.items)) for j in range(len(self.capacities)))
 
         self.model.maximize(accumulated_value)
